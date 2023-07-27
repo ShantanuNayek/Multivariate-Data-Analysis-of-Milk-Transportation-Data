@@ -1,0 +1,264 @@
+---
+title: "Milk Transpotation data"
+author: "Subhasis , Shantanu , Abhirup"
+date: "2023-03-21"
+output: html_document
+---
+
+```{r importing of data}
+mt=read.table("D:/MSTAT_1ST_YEAR/Multivariate Project/milk_transportation.txt")
+colnames(mt)=c("Fuel_type","fuel_cost","repair_cost","capital_cost")
+mt[,1]=as.factor(mt[,1])
+summary(mt)
+```
+```{r package}
+library(lattice)
+library(latticeExtra)
+library(ggplot2)
+library(MASS)
+library(plotly)
+attach(mt)
+```
+
+```{r normality checking}
+fc=(fuel_cost-mean(fuel_cost))/sqrt(var(fuel_cost))
+rc=(repair_cost-mean(repair_cost))/sqrt(var(repair_cost))
+cc=(capital_cost-mean(capital_cost))/sqrt(var(capital_cost))
+ggplot(data=mt,aes(x=fuel_cost))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+ggplot(data=mt,aes(x=repair_cost))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+ggplot(data=mt,aes(x=capital_cost))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+ggplot(data=mt,aes(x=log(fuel_cost)))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+ggplot(data=mt,aes(x=sqrt(capital_cost)))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+#qqmath(fc, distribution = function(p) qnorm(p,0,1), grid = TRUE, aspect = "iso",xlab="theortical quantiles")
+#qqmath(rc, distribution = function(p) qnorm(p,0,1), grid = TRUE, aspect = "iso",xlab="theortical quantiles")+aspanel.lines(seq(0,10,1),seq(0,10,1), col.line = "black")
+#qqmath(cc, distribution = function(p) qnorm(p,0,1), grid = TRUE, aspect = "iso",xlab="theortical quantiles")
+```
+
+
+```{r quantile plot}
+theo_quant=function(a1)
+{
+  a=sort(a1)
+  b=array(0)
+  for(i in 1:length(a))
+  {
+    pi=i/length(a)
+    b[i]=qnorm(pi,0,1)
+  }
+  k=data.frame(b,a)
+  k
+}
+```
+
+
+```{r quantile plot}
+data1=theo_quant(fc)
+
+
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))
+data1=theo_quant(rc)
+
+
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))
+data1=theo_quant(cc)
+
+
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))
+```
+```{r}
+shapiro.test(mt$fuel_cost)
+shapiro.test(mt$repair_cost)
+shapiro.test(mt$capital_cost)
+shapiro.test(log(mt$fuel_cost))
+```
+```{r EDA}
+
+ggplot(data=mt,aes(fuel_cost,repair_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+
+
+ggplot(data=mt,aes(fuel_cost,repair_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="mt",
+       x="fuel cost",
+       y="repair cost",
+       col="Index")+
+  theme_light()
+  
+```
+
+```{r EDA}
+
+ggplot(data=mt,aes(fuel_cost,capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()+
+  labs(title="Scatterplot",
+       subtitle="mt",
+       x="fuel cost",
+       y="capital_cost")
+
+
+ggplot(data=mt,aes(fuel_cost,capital_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="mt",
+       x="fuel cost",
+       y="capital_cost",
+       col="Index")+
+  theme_light()
+  
+```
+
+```{r EDA}
+
+ggplot(data=mt,aes(repair_cost,capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()+
+  labs(title="Scatterplot",
+       subtitle="mt",
+       x="repair_cost",
+       y="capital_cost")
+
+
+ggplot(data=mt,aes(repair_cost,capital_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="mt",
+       x="repair_cost",
+       y="capital_cost",
+       col="Index")+
+  theme_light()
+  
+```
+```{r}
+fm = lm(fuel_cost ~1, data = mt)
+par(mar = c(5, 4, 1, 2))
+boxcox(fm, lambda = seq(-0.5, 0.5, 0.1), plotit = TRUE) # log is close enough to optimum
+
+```
+```{r}
+power_trans=function(x,lamda){
+  if (lamda!=0) {
+    y=(x^(lamda)-1)/lamda}
+  else {
+    y = log(x) }
+  y
+}
+Boxcox= function(x,lamda){
+  n=length(x)
+  lam=array(0)
+  for (i in 1:length(lamda)){
+    y=array(0)
+    for (j in 1:n){
+      y[j] = power_trans(x[j],lamda[i])
+    }
+    var=(n-1)*var(y)/n
+    lam[i]=-(log(2*pi)+log(var)+1)*(n/2)+(lamda[i]-1)*sum(sign(x)*log(abs(x)+1))
+    
+  }
+  
+  a=as.data.frame(cbind(lam,lamda))
+  m=lamda[which(lam==max(lam))]
+  ggplot(data=a,aes(x=lamda,y=lam))+
+   geom_line(col=2)+geom_vline(xintercept = m)+
+    theme_light()
+}
+```
+
+```{r warning=FALSE}
+x=mt$fuel_cost
+lamda=seq(0,0.5,0.01)
+Boxcox(x,lamda)
+```
+```{r}
+power_trans_vec=function(x,lamda){
+  y=array(0)
+  for (i in 1:length(x)){
+    y[i]=power_trans(x[i],lamda)
+  }
+  y
+}
+
+```
+
+```{r}
+fuel_cost1=power_trans_vec(mt$fuel_cost,0.1)
+shapiro.test(fuel_cost1)
+```
+```{r}
+fm = lm(repair_cost ~1, data = mt)
+par(mar = c(5, 4, 1, 2))
+boxcox(fm, lambda = seq(-0.5, 2, 0.1), plotit = TRUE) # log is close enough to optimum
+x=mt$repair_cost
+lamda=seq(0,2,0.01)
+Boxcox(x,lamda)
+```
+```{r}
+repair_cost1=power_trans_vec(mt$repair_cost,1)
+shapiro.test(repair_cost1)
+```
+```{r}
+fm = lm(capital_cost ~1, data = mt)
+par(mar = c(5, 4, 1, 2))
+boxcox(fm, lambda = seq(-0.5, 2, 0.1), plotit = TRUE) # log is close enough to optimum
+x=mt$capital_cost
+lamda=seq(0,2,0.01)
+Boxcox(x,lamda)
+```
+
+```{r}
+capital_cost1=power_trans_vec(mt$capital_cost,0.5)
+shapiro.test(capital_cost1)
+```
+
+```{r}
+fc1=(fuel_cost1-mean(fuel_cost1))/sqrt(var(fuel_cost1))
+rc1=(repair_cost1-mean(repair_cost1))/sqrt(var(repair_cost1))
+cc1=(capital_cost1-mean(capital_cost1))/sqrt(var(capital_cost1))
+ggplot(data=mt,aes(x=fuel_cost1))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+ggplot(data=mt,aes(x=repair_cost1))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+ggplot(data=mt,aes(x=capital_cost1))+geom_histogram(fill="#AED6F1",col="#06416D",aes(y=..density..))+theme_light()+geom_density(col="#353D60")
+
+```
+```{r}
+data1=theo_quant(fc1)
+
+
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))
+
+data1=theo_quant(rc1)
+
+
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))
+
+data1=theo_quant(cc1)
+
+
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))
+```
+```{r}
+library(mvnormtest)
+df=cbind(fuel_cost1,repair_cost1,capital_cost1)
+mshapiro.test(df)
+```
+

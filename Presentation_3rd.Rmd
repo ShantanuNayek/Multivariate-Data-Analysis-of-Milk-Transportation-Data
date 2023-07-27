@@ -1,0 +1,726 @@
+---
+title: "MILK TRANSPORTATION DATA"
+author: "Abhirup Sengupta, Subhasis Sur , Shantanu Nayek"
+date: "`r Sys.Date()`"
+output:
+  revealjs::revealjs_presentation:
+    theme: sky
+    highlight: espresso
+    center: true
+    transition: convex
+    background_transition: zoom
+    fig_width: 8
+    fig_height: 4
+    fig_caption: true
+---
+
+## About Data 
+
+- Dataset contains information about the Fuel type (whether it is gasoline or diesel) , Fuel cost, Repair cost, Capital cost of milk  transportation mode .
+
+- There are 59 datapoints and 4 features in the dataset.
+
+- 4 features are - 
+  - Fuel Type 
+  - Fuel Cost
+  - Repair Cost
+  - Capital Cost
+
+```{r echo=FALSE}
+MT=read.table("D:/milk_transportation.txt")
+colnames(MT)=c("Fuel_type","Fuel_cost","repair_cost","capital_cost")
+View(MT)
+```
+
+## Information about variables 
+
+- $\textbf{Fuel Type}$ :- 
+- Transportation Fuel means any fuel used or intended for use as a motor vehicle fuel .
+- In our data , there are 2 types of Fuel - Gasoline and Diesel . Fuel type is denoted as 1 if fuel type is gasoline and it is denoted as 2 if fuel type is diesel .
+
+- $\textbf{Fuel Cost}$ :-
+- Fuel cost means the cost of fuel consumed for the mode used for  transportation of milk . It is measured in the unit cents/mi .
+
+##
+
+- $\textbf{Repair Cost}$ :- Repair costs for transportation refer to the expenses incurred in repairing or maintaining vehicles used for transportation purposes. It is also measured in unit cents/mi .
+
+- $\textbf{capital Cost}$ :- Costs applying to the physical assets of transportation, mainly infrastructures, terminals, and vehicles. It is also measured in unit cents/mi.
+
+```{r echo= FALSE,warning=FALSE,message=FALSE}
+## Please install the following library prior execution of the program . 
+library(car)
+library(ggplot2)
+library(lattice)
+library(latticeExtra)
+library(gridExtra)
+#library(MVN)
+#library(heplots)
+library(Hotelling)
+library(MASS)
+library(rgl)
+```
+
+```{r echo=FALSE,warning=FALSE}
+
+
+theo_quant=function(a1)
+{
+  a=sort(a1)
+  b=array(0)
+  for(i in 1:length(a))
+  {
+    pi=i/length(a)
+    b[i]=qnorm(pi,0,1)
+  }
+  k=data.frame(b,a)
+  k
+}
+
+```
+
+## Summary of the data 
+
+```{r echo=FALSE ,warning=FALSE}
+MT=read.table("D:/milk_transportation.txt")
+colnames(MT)=c("Fuel_type","Fuel_cost","repair_cost","capital_cost")
+attach(MT)
+#head(MT,5)
+MT[,1]=as.factor(MT[,1])
+summary(MT)
+```
+
+## EDA 
+
+- First we want to do basic visualization of our data . 
+
+- So , basically I will do some visualization like scatterplot , boxplot , histogram and QQplot etc. 
+
+## 
+
+```{r ,test-rgl,webgl= TRUE,echo=FALSE}
+
+knitr::knit_hooks$set(webgl = hook_webgl)
+with(MT, plot3d(Fuel_cost, repair_cost, capital_cost, type = "s", col = "red", size = 1))
+```
+
+
+##
+
+- Scatterplots of "Fuel Cost" and " Repair Cost" :- 
+
+```{r echo=FALSE,message=FALSE}
+# Fuel _cost vs repair_cost
+a1=ggplot(data=MT,aes(x=Fuel_cost,y=repair_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+a2=ggplot(data=MT,aes(Fuel_cost,repair_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="MT",
+       x="Fuel cost",
+       y="repair_cost",
+       col="Index")+
+theme_light()
+grid.arrange(a1,a2)
+```
+
+
+## Conclusion :-
+
+- From the plot , we get the presence of 2 outliers in the dataset for the two variable "Fuel Cost" and "Repair Cost" .
+
+- Also, for the grouped dataset , we get some outliers.
+
+## 
+- Scatterplots of "Fuel Cost" and " Capital Cost" :-
+
+```{r echo=FALSE,message=FALSE}
+#Fuel_cost vs capital_cost
+b1=ggplot(data=MT,aes(x=Fuel_cost,y=capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+b2=ggplot(data=MT,aes(Fuel_cost,capital_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="MT",
+       x="Fuel cost",
+       y="capital_cost",
+       col="Index")+
+theme_light()
+grid.arrange(b1,b2)
+```
+
+
+
+
+
+## Conclusion :-  
+
+- From the plot , we get the presence of 2 outliers in the dataset for the two variable "Fuel Cost" and "capital Cost" .
+
+- Also, for the grouped dataset , we get some outliers.
+
+## 
+- Scatterplots of "Repair Cost" and "Capital Cost" :-
+
+```{r echo=FALSE,message=FALSE}
+#repair_cost vs capital_cost
+c1=ggplot(data=MT,aes(x=repair_cost,y=capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+c2=ggplot(data=MT,aes(repair_cost,capital_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="MT",
+       x="repair cost",
+       y="capital_cost",
+       col="Index")+
+theme_light()
+grid.arrange(c1,c2)
+```
+
+
+
+## Conclusion :-  
+
+- From the plot , we get the presence of 2 outliers in the dataset for the two variable "Repair Cost" and "capital Cost" .
+
+- Also, for the grouped dataset , we get some outliers.
+
+## Scatterplot matrix :- 
+
+```{r ,echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/abc.jpg')
+```
+
+
+## Conclusion :-
+
+- 3 covariates Fuel cost, Repair cost and capital cost are uncorrelated.
+
+## 
+- Histogram for the variable "Fuel Cost" :-  
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+#Fuel Cost
+ggplot(data=MT,aes(x=Fuel_cost))+
+  geom_histogram(fill="#E4BEF5",col="#24015D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#4A235A")+
+  theme_light()
+```
+
+
+## Conclusion :-
+- The variable of the data "Fuel Cost" is positively skewed due to the presence of outliers . 
+
+## 
+- Histogram of the variable "Repair Cost" :-
+
+```{r echo=FALSE,message=FALSE}
+#Repair Cost
+ggplot(data=MT,aes(x=repair_cost))+
+  geom_histogram(fill="#ABEBC6",col="#04AC4C",
+                 aes(y=..density..))+geom_density(lwd=2,col="#0B5345")+
+  theme_light()
+```
+
+
+## Conclusion :- 
+- The variable "Repair Cost" is bimodal . 
+
+##
+- Histogram of the variable "Capital Cost":- 
+
+```{r echo=FALSE,message=FALSE}
+#Capital Cost
+ggplot(data=MT,aes(x=capital_cost))+
+  geom_histogram(fill="#AED6F1",col="#06416D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#212F3C")+
+  theme_light()
+```
+
+
+## Conclusion :-
+- The variable "Capital Cost" is positively skewed , may be due to the presence of outliers . 
+
+##
+- Box-Plots of the variable "Fuel Cost" :- 
+
+```{r echo=FALSE,message=FALSE}
+b1=ggplot(MT,aes(Fuel_cost))+
+  geom_boxplot(fill="#80ced6")+
+  theme_light()
+
+b2=ggplot(MT,aes(Fuel_type,Fuel_cost))+
+  geom_boxplot(aes(fill=Fuel_type))+theme_light()
+grid.arrange(b1,b2)
+```
+
+
+
+## Conclusion :- 
+-  Clearly, There are 2 outliers in the Fuel Cost variable . 
+-  2 outlier when fuel type is 1 and 1 outlier when fuel type is 2 .
+-  The Fuel Cost is slightly positively skewed .
+-  Median is high for Fuel type is 1(Gasoline) than Fuel type is 2(Diesel) . 
+
+##
+- Boxplots for the variable "Repair Cost":-
+
+
+```{r echo=FALSE,message=FALSE}
+
+c1=ggplot(MT,aes(repair_cost))+
+  geom_boxplot(fill="#b0aac0")+theme_light()
+c2=ggplot(MT,aes(Fuel_type,repair_cost))+
+  geom_boxplot(aes(fill=Fuel_type))+theme_light()
+grid.arrange(c1,c2)
+
+```
+
+
+## Conclusion :- 
+-  Clearly, the "Repair Cost" variable has no outliers in both total and grouped dataset  . 
+-  The Repair Cost is symmetric in the total dataset .
+-  In the case of Fuel type 1, data is symmetric but in the fuel type 2, data is negatively skewed. Average of the repair cost of the fuel type 2 is higher than the fuel type 1.
+
+##
+- Box Plot for the variable "Capital Cost":- 
+
+```{r echo=FALSE,message=FALSE}
+a1=ggplot(MT,aes(capital_cost))+
+  geom_boxplot(fill="#eca1a6")+theme_light()
+
+a2=ggplot(MT,aes(Fuel_type,capital_cost))+
+  geom_boxplot(aes(fill=Fuel_type))+theme_light()
+grid.arrange(a1,a2)
+
+```
+
+
+## Conclusion:- 
+- capital cost has 1 outlier in both the total and grouped dataset when fuel type is 2.
+- In the total dataset capital cost is positively skewed.
+-  Average of the repair cost of the fuel type 2 is much higher than the fuel type 1
+
+
+
+
+
+
+## QQPLOT
+
+- All the variables deviates from normality more or less
+
+```{r For visualisation : qqplot for log transformed variable, echo=FALSE, message=FALSE, warning=FALSE}
+#Fuel_cost
+
+fc=(Fuel_cost-mean(Fuel_cost))/(sd(Fuel_cost))
+data1=theo_quant(fc)
+pic1=ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="Fuel_cost",
+       x="theoretical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+#repair_cost
+rc=(repair_cost-mean(repair_cost))/(sd(repair_cost))
+data1=theo_quant(rc)
+pic2=ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#50394c")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#f7cac9",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="repair_cost",
+       x="theoretical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+#capital_cost
+cc=(capital_cost-mean(capital_cost))/(sd(capital_cost))
+data1=theo_quant(cc)
+pic3=ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#618685")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#f4e1d2",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="capital_cost",
+       x="theoretical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+grid.arrange(pic1,pic2,pic2,nrow=1)
+  
+```
+
+## Shapiro Wilk Test
+
+- Assumption :- Here ,   $X_{1},X_{2},...,X_{n}$ are random sample from a population .
+
+- Null Hypothesis :- $X_{1},X_{2},...,X_{n}$ are i.i.d $N(\mu,\sigma^2)$ for some $\mu,\sigma^2$ 
+
+- Test statistic :-  W = $\frac{(\sum_{i=1}^{n} a_{i}X_{(i)})^2}{\sum_{i=1}^{n}(X_{i} - \bar{X})^2}$ where , a = $\frac{m^TV}{\sqrt{m^TV^{-1}V^{-1}m}}$ with m and V the mean vector and variance -covariance matrix of $(Z_{(1)},....,Z_{(n)})^T, Z_i$ follows i.i.d. $N(0,1)$
+
+- Rejection criteria :-  Reject the null hypothesis for large values of the test statistic
+
+## Shapiro Wilk Test
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss1.png')
+```
+
+- Only, Normality of repair cost is accepted at 0.05 level of significance
+
+## MULTIVARIATE NORMALITY 
+
+- Here we use mvn function (MVN package ) in R 
+
+- It gives multivariate normality test using Henze Zirkler and 
+also a univarite normality test using Anderson Darling
+
+## Anderson Darling  
+
+- Assumption :- Here,  $X_{1},X_{2},...,X_{n}$ are random sample from a population 
+
+- Null Hypothesis :- The data comes from a specified distrubutions  
+
+- Alternate Hypothesis :- The data does not come from the specified distributions
+
+## Anderson Darling
+
+- Test statistic :-  AD = $-n-\frac{1}{n}\sum_{i=1}^{n} (2i-1)[lnF(X_{i}) + ln(1-F(X_{n-i+1}))$ 
+
+where , n = the sample size ; F(X) = the cdf of the specified distributions ,i = the i th sample , calculated when the data is sorted in ascending order . 
+
+- Decision :- Then , find the p value of the test statistic and if p value are less , we reject the null hypothesis 
+
+
+
+## Henze Zirkler
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/klm.jpg')
+``` 
+
+## mvn
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss2.png')
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss3.png')
+``` 
+
+- Here, Normailty of repair cost is accepted at 0.05 level of significance
+
+## Transformation of variable
+
+$y = ((x+1)^{\lambda}-1)/\lambda$ if $\lambda \neq0$
+
+  $=log(x+1)$ o.w.  
+  
+- Find the $\lambda$ for which the log-likelihood is maximized
+
+- log-likelihood :-
+
+$-(n/2)(log(2\pi)+log(\hat{\sigma}^{2}))-((sum((y-\hat{\mu}^2))/(2\hat{\sigma}^{2})))$
+
+$+(\lambda-1)\sum(sign(x_i)log(mod(x_i)+1))$
+
+## Transformation
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss4.png')
+``` 
+
+- Select $\lambda$ as -0.4 for fuel cost
+
+## Transformation
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss5.png')
+``` 
+
+- Select $\lambda$ as 0.1 for capital cost
+
+## QQPLOT and HISTOGRAM after Transformation
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/fc_trns_dp_qqp.png')
+``` 
+
+## QQPLOT and HISTOGRAM after Transformation
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/cc_trns_dp_qqp.png')
+```
+
+## Repair cost
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/rc_trns_dp_qqp.png')
+``` 
+
+##
+ 
+- If we apply transformation in repair cost, then also it remains more or less bimodal in nature
+
+- Since at first test for normality accepts for it so that we do not transform it.
+
+## MVN after Transformation
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss6.png')
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss7.png')
+```
+
+- Univariate as well as Multivariate normality accepts
+
+
+## Test fot Homogeneity
+
+- Since normality accepts so we are looking for homogeneity of variance covariance
+matrix of 2 data set.
+
+- We use BoxM test for testing
+
+- Box-M Test
+
+- Assumption :- $X_{i}(n_{i}*p)$ are $NDM_{p}(\mu_{i},\Sigma_{i})$ i = 1(1)k
+
+- Null Hypothesis :- all variance-covariance matrices are equal 
+
+- Alternate Hypothesis :- variance-covariance matrices are not equal
+
+## Box-M Test
+
+- Test statistic :- M = $\gamma[\sum_{i=1}^{k}(n_{i}-1)log|S_{u_{i}}^{-1}S_{u}|]$ 
+where , $S_{u}$ = $\frac{nS}{n-k}$ 
+$S_{u_{i}}$ = $\frac{n_{i}S_{i}}{n_{i}-1}$
+$\gamma$ = 1 - $\frac{2p^2+3p-1}{6(p+1)(k-1)}[\sum_{i=1}^{k} (\frac{1}{n_{i}-1}-\frac{1}{n-k})]$
+
+- Asymptotic distribution(under $H_{0}$ : Chi-square with df = $\frac{1}{2}p(p+1)(k-1)$
+
+- Decision :- Then , find the p value of the test statistic and if p value are less,we reject the null hypothesis.
+
+## Box-M Test
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss8.png')
+```
+
+- Accept $H_{0}: \Sigma_{1} = \Sigma_{2}$ at 0.05 level of significance.
+
+## Manova
+
+- Since homogeneity of variance covariance matrix accepted so we are going for MANOVA
+
+- In general in manova, we test $H_{0}: \mu_{1}= \mu_{2}=....=\mu_{k}$ vs $H1: \mu_{i} \neq \mu_{j}$ for some i,j when the covariance matrix of the k populations are equal.
+
+- Here, k = 2. Consider, Fuel type as a treatment having 2 level, Disel and Gasoline
+
+- It can be shown that the LRT statistic for the above testing when we have two population is equivalent to two sample Hotelling $T^2$
+
+##
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss9.png')
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss10.png')
+```
+
+## Hotelling's T square 
+
+- Given $\Sigma_{1}=\Sigma_{2}$
+
+- To test $H_{0}$: $\mu_{1}$=$\mu_{2}$ vs $H_{1}$: $\mu_{1}\neq\mu_{2}$
+
+- Test Statistic : $D^{2}=(n_{1}n_{2}/n)(\bar{x_{1}}-\bar{x_{2}})'S_{u}^{-1}(\bar{x_{1}}-\bar{x_{2}})$
+where $S_{u} =(n_{1}S_{1}+n_{2}S_{2})/(n-2)$ , $n=n_{1}+n_{2}$
+
+- Under $H_{0}: D^{2}  follows  T^2(p,n-2)$
+
+## Hotelling's T square 
+
+ 
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/ss11.png')
+```
+
+- From the testing ,we get the p-value $2.685e-07$. So, we reject $H_{0}$: $\mu_{1}$=$\mu_{2}$ at 0.05 level of significance
+
+- So, there is a significant effect of Fuel type (Gasoline or disel) 
+
+
+## ANOVA
+
+- Now,we are interest for checking of treatment,fuel type with each of the variable individually
+
+- At first we consider Fuel cost
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/manova1.png')
+```
+
+- Here, p-value is 0.09464.So we accept $H_{0}$ at 0.05 level of significance.So, there is no effect of fuel type in fuel cost
+
+## ANOVA 
+
+- Capital Cost
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/manova2.png')
+```
+
+- Here , P-value is $1.45e-07$.So we reject $H_{0}$ at 0.05 level of significance. So, there is a effect of fuel type in capital cost
+
+## ANOVA 
+
+- Repair Cost
+
+```{r echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/manova3.png')
+```
+
+- Here , P-value is 0.03348.So we reject $H_{0}$ at 0.05 level of significance. So, there is a effect of fuel type in repair cost
+
+
+
+## Principal Component Analysis
+
+```{r , echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/Scree_plot..jpg')
+```
+
+##
+- Rotation Matrix and Biplot 
+
+```{r , echo=FALSE}
+
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/Biplot.png')
+```
+
+## Linear Discriminant Analysis
+
+```{r , echo=FALSE}
+
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/output_lda.png')
+```
+
+- Prior probability of each fuel type in the population is assumed to be 0.5.
+
+- Cost of misclassification are assumed to be equal.
+
+
+
+##
+
+- Misclassification Error : Cross validation
+
+```{r , echo=FALSE}
+
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/mce_lda.png')
+```
+
+- The rate of misclassification is 18.6% .
+
+
+## Logistic Regression
+
+- Estimates of the parameters
+```{r , echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/log_pe.jpg')
+```
+
+- In the light of the given data , Capital Cost and Fuel Cost have significant effect on Fuel Type.
+
+##
+
+- Fitted Probabilities
+```{r , echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/fp_log.png')
+```
+
+
+
+
+##
+
+- Confusion matrix
+
+```{r , echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/cm_log.jpg')
+```
+
+- The misclassification error from this confusion matrix is approximately 11/59 i.e, 0.186.
+
+
+## 
+
+```{r ,echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/mce_th.png')
+```
+
+
+
+
+
+
+
+## Factor Analysis
+
+- The Kaiser–Meyer–Olkin (KMO) test is a statistical measure to determine how suited data is for factor analysis. The test measures sampling adequacy for each variable in the model and the complete model. The statistic is a measure of the proportion of variance among variables that might be common variance. The higher the proportion, the higher the KMO-value, the more suited the data is to factor analysis.
+
+## Report :
+
+```{r, echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/FA.jpg')
+```
+
+## Profile Analysis
+
+```{r , echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/pa.jpg')
+```
+
+##
+
+```{r , echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/Profile Analysis.jpg')
+```
+
+## Report :
+
+```{r, echo=FALSE}
+knitr::include_graphics('T:/SEM 2/MULTIVARIATE_SWAGATANANDI/PROJECT WORK/Images/pat.jpg')
+```
+
+- In the light of the given data , it seems that the profiles are not parallel.
+
+- Hence, needless to do the test for coincidence.
+
+
+## Findings 
+
+- There were few outliers in the data, but we continue to work with those as removing them may lead to information loss.
+
+- The variable repair cost justifies to follow normal even if the histogram is not exactly symmetric. It will be a motive to find transformations to attain symmetricity during further analysis.
+
+- On transformation of the remaining two variables , finally the transformed data in hand showed multivariate normality using Henze Zirkler test.
+
+- On performing Box -M test , the two populations seemed to be homogenous in the light of the data.
+
+
+##
+
+
+- But on performing the test of equality of the means for the two populations , the tests gets rejected . This shows some justification for the test of parallel profiles , which shows that in the light of the given data , the two profiles are not parallel and hence not , coincident.
+
+- Since , the two populations are homogenous , we wish to perform Linear Discriminant Analysis and the from there we observed that misclassification error is 0.18 which is same as in case of classification when done by Logistic Regression.
+
+- The principal component analysis and factor analysis does not make sense being implemented in the data.
+
+## Thanks ....

@@ -1,0 +1,391 @@
+---
+title: "Data Analysis of Milk Transportation Data"
+author: "Abhirup Sengupta, Subhasis Sur , Shantanu Nayek"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Libraries}
+library(car)
+library(ggplot2)
+library(lattice)
+library(latticeExtra)
+library(gridExtra)
+library(MVN)
+```
+
+```{r user-defined function}
+
+#This function is defined to draw qqplot using ggplot 
+#and we take the entry of the data in standardised form
+theo_quant=function(a1)
+{
+  a=sort(a1)
+  b=array(0)
+  for(i in 1:length(a))
+  {
+    pi=i/length(a)
+    b[i]=qnorm(pi,0,1)
+  }
+  k=data.frame(b,a)
+  k
+}
+
+```
+
+```{r The data}
+setwd("D:/")
+MT=read.table("milk_transportation.txt")
+colnames(MT)=c("Fuel_type","Fuel_cost","repair_cost","capital_cost")
+attach(MT)
+head(MT,5)
+MT[,1]=as.factor(MT[,1])
+summary(MT)
+```
+
+
+```{r Checking Normality}
+qqPlot(Fuel_cost)
+qqPlot(repair_cost)
+qqPlot(capital_cost)
+
+#Fuel Cost
+ggplot(data=MT,aes(x=Fuel_cost))+
+  geom_histogram(fill="#E4BEF5",col="#24015D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#4A235A")+
+  theme_light()
+#on log transformation
+ggplot(data=MT,aes(x=log(Fuel_cost)))+
+  geom_histogram(fill="#E4BEF5",col="#24015D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#4A235A")+
+  theme_light()
+shapiro.test(log(Fuel_cost))
+
+#Repair Cost
+ggplot(data=MT,aes(x=repair_cost))+
+  geom_histogram(fill="#ABEBC6",col="#04AC4C",
+                 aes(y=..density..))+geom_density(lwd=2,col="#0B5345")+
+  theme_light()
+
+#on log transformation
+ggplot(data=MT,aes(x=log(repair_cost)))+
+  geom_histogram(fill="#ABEBC6",col="#04AC4C",
+                 aes(y=..density..))+geom_density(lwd=2,col="#0B5345")+
+  theme_light()
+
+#Capital Cost
+ggplot(data=MT,aes(x=capital_cost))+
+  geom_histogram(fill="#AED6F1",col="#06416D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#212F3C")+
+  theme_light()
+
+#on log transformation
+ggplot(data=MT,aes(x=log(capital_cost)))+
+  geom_histogram(fill="#AED6F1",col="#06416D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#212F3C")+
+  theme_light()
+
+```
+```{r Shapiro Wilk Test}
+shapiro.test(Fuel_cost)
+shapiro.test(repair_cost)
+shapiro.test(capital_cost)
+shapiro.test(log(Fuel_cost))
+```
+
+
+
+```{r qqplot for log transformed variable,message=FALSE}
+#Fuel_cost
+fc=(Fuel_cost-mean(Fuel_cost))/(sd(Fuel_cost))
+data1=theo_quant(fc)
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="Fuel_cost",
+       x="theoritical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+#repair_cost
+rc=(repair_cost-mean(repair_cost))/(sd(repair_cost))
+data1=theo_quant(rc)
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#50394c")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#f7cac9",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="repair_cost",
+       x="theoritical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+#capital_cost
+cc=(capital_cost-mean(capital_cost))/(sd(capital_cost))
+data1=theo_quant(cc)
+ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#618685")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#f4e1d2",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="capital_cost",
+       x="theoritical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+
+  
+```
+
+```{r Scatterplots of Variables }
+# Fuel _cost vs repair_cost
+a1=ggplot(data=MT,aes(x=Fuel_cost,y=repair_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+a2=ggplot(data=MT,aes(Fuel_cost,repair_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="MT",
+       x="Fuel cost",
+       y="repair_cost",
+       col="Index")+
+  theme_light()
+
+grid.arrange(a1,a2)
+#Fuel_cost vs capital_cost
+b1=ggplot(data=MT,aes(x=Fuel_cost,y=capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+b2=ggplot(data=MT,aes(Fuel_cost,capital_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="MT",
+       x="Fuel cost",
+       y="capital_cost",
+       col="Index")+
+  theme_light()
+grid.arrange(b1,b2)
+#repair_cost vs capital_cost
+c1=ggplot(data=MT,aes(x=repair_cost,y=capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+c2=ggplot(data=MT,aes(repair_cost,capital_cost,col=Fuel_type))+
+  geom_point(size=2)+
+  facet_wrap(~Fuel_type,scales="free_x",ncol=2)+
+  labs(title="Scatterplot",
+       subtitle="MT",
+       x="repair cost",
+       y="capital_cost",
+       col="Index")+
+  theme_light()
+
+grid.arrange(c1,c2)
+
+```
+
+```{r Boxplot}
+b1=ggplot(MT,aes(Fuel_cost))+
+  geom_boxplot(fill="#80ced6")+
+  theme_light()
+
+b2=ggplot(MT,aes(Fuel_type,Fuel_cost))+
+  geom_boxplot(aes(fill=Fuel_type))+theme_light()
+grid.arrange(b1,b2)
+
+
+
+
+c1=ggplot(MT,aes(repair_cost))+
+  geom_boxplot(fill="#b0aac0")+theme_light()
+c2=ggplot(MT,aes(Fuel_type,repair_cost))+
+  geom_boxplot(aes(fill=Fuel_type))+theme_light()
+grid.arrange(c1,c2)
+
+
+
+
+a1=ggplot(MT,aes(capital_cost))+
+  geom_boxplot(fill="#eca1a6")+theme_light()
+
+a2=ggplot(MT,aes(Fuel_type,capital_cost))+
+  geom_boxplot(aes(fill=Fuel_type))+theme_light()
+grid.arrange(a1,a2)
+
+```
+
+```{r}
+d1=MT[,-1]
+a1=ggplot(data=MT,aes(x=Fuel_cost,y=repair_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+b1=ggplot(data=MT,aes(x=Fuel_cost,y=capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+c1=ggplot(data=MT,aes(x=repair_cost,y=capital_cost))+
+  geom_point(col=Fuel_type)+theme_light()
+grid.arrange(a1,b1,c1,nrow=1)
+```
+
+```{r Box-Cox Transformation Definition}
+power_trans=function(x,lamda){
+  if (x>=0) {
+    if (lamda !=0){
+      y = ((x+1)^(lamda)-1)/lamda
+      }
+    else {
+      y = log(x+1)
+     }
+  }
+  else {
+      if (lamda!=2){
+        y=-((-x+1)^(2-lamda)-1)/(2-lamda)
+        }
+      else {
+        y=-log(-x+1) 
+      }
+  }
+  y
+}
+
+power_trans_vec=function(x,lamda){
+  y=array(0)
+  for (i in 1:length(x)){
+    y[i]=power_trans(x[i],lamda)
+  }
+  y
+}
+
+Boxcox= function(x,lamda){
+  n=length(x)
+  lam=array(0)
+  for (i in 1:length(lamda)){
+    y=array(0)
+    y=power_trans_vec(x,lamda[i])
+    var=(n-1)*var(y)/n
+    lam[i]=-(log(2*pi)+log(var))*(n/2)-((sum((y-mean(y))^2))/(2*var))+(lamda[i]-1)*sum(sign(x)*log(abs(x)+1))
+    
+  }
+  
+  a=as.data.frame(cbind(lam,lamda))
+  m=lamda[which(lam==max(lam))]
+  ggplot(data=a,aes(x=lamda,y=lam))+
+   geom_line(col=2)+geom_vline(xintercept = m)+
+    theme_light()
+}
+
+power_trans_vec=function(x,lamda){
+  y=array(0)
+  for (i in 1:length(x)){
+    y[i]=power_trans(x[i],lamda)
+  }
+  y
+}
+```
+
+```{r}
+#Fuel_cost
+x=Fuel_cost
+lamda=seq(-1,1,0.01)
+Boxcox(x,lamda)
+
+#repair_cost
+y=repair_cost
+lamda=seq(-1,1,0.01)
+Boxcox(y,lamda)
+
+#capital_cost
+z=capital_cost
+lamda=seq(-1,1,0.01)
+Boxcox(z,lamda)
+```
+
+
+```{r Transformed Variable}
+
+Fuel_cost1= power_trans_vec(Fuel_cost,0)
+repair_cost1=power_trans_vec(repair_cost,0)
+capital_cost1=power_trans_vec(capital_cost,0)
+
+```
+
+```{r Visualisation of Normality in transformed variable}
+#Fuel_cost1
+a1=ggplot(data=MT,aes(x=Fuel_cost1))+
+  geom_histogram(fill="#E4BEF5",col="#24015D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#4A235A")+
+  theme_light()
+
+
+fc1=(Fuel_cost1-mean(Fuel_cost1))/(sd(Fuel_cost1))
+data1=theo_quant(fc1)
+a2=ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#E24B14")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#E4EC71",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="Fuel_cost1",
+       x="theoritical quantiles",
+       y="sample quantiles")+
+  theme_light()
+
+grid.arrange(a1,a2,nrow=1)
+
+#repair_cost1
+b1=ggplot(data=MT,aes(x=repair_cost1))+
+  geom_histogram(fill="#ABEBC6",col="#04AC4C",
+                 aes(y=..density..))+geom_density(lwd=2,col="#0B5345")+
+  theme_light()
+
+rc1=(repair_cost1-mean(repair_cost1))/(sd(repair_cost1))
+data1=theo_quant(rc1)
+b2=ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#50394c")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#f7cac9",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="repair_cost1",
+       x="theoritical quantiles",
+       y="sample quantiles")+
+  theme_light()
+grid.arrange(b1,b2,nrow=1)
+
+#capital_cost1
+c1=ggplot(data=MT,aes(x=capital_cost1))+
+  geom_histogram(fill="#AED6F1",col="#06416D",
+                 aes(y=..density..))+geom_density(lwd=2,col="#212F3C")+
+  theme_light()
+
+
+cc1=(capital_cost1-mean(capital_cost1))/(sd(capital_cost1))
+data1=theo_quant(cc1)
+c2=ggplot(data=data1,aes(x=data1[,1],y=data1[,2]))+
+  geom_point(col="#618685")+
+  stat_smooth(method=lm,
+    formula=y~x,lwd=1,col="#f4e1d2",aes(col = "Fitted Lines"))+
+  labs(title="QQPLOT",
+       subtitle="capital_cost1",
+       x="theoritical quantiles",
+       y="sample quantiles")+
+  theme_light()
+grid.arrange(c1,c2,nrow=1)
+
+```
+
+```{r New data frame}
+MT_new=data.frame(Fuel_type,Fuel_cost1,repair_cost1,capital_cost1)
+MT_new_G=MT_new[MT_new$Fuel_type==1,]
+MT_new_D=MT_new[MT_new$Fuel_type==2,]
+
+#Splitting into two population
+MT_new_G
+MT_new_D
+```
+
+
+```{r Checking Multivariate Normality}
+
+```
+
